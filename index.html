@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Chat with Gemini Nano on Chrome</title>
+</head>
+<body>
+    <h1>Chat with Gemini Nano on Chrome</h1>
+    <div id="chat" style="width: 500px; height: 300px; border: 1px solid #ccc; overflow-y: scroll; padding: 10px;">
+    </div>
+    <input type="text" id="message" style="width: 400px;" placeholder="Enter a message">
+    <button id="send">Send</button>
+
+    <script>
+        (async () => {
+            const chatDiv = document.getElementById('chat');
+            const messageInput = document.getElementById('message');
+            const sendButton = document.getElementById('send');
+
+            const aiDisableHtmlText = "<p style='color: red;'>AI language model is not available.</p>";
+
+            if(window.ai?.languageModel === undefined) {
+                chatDiv.innerHTML = aiDisableHtmlText;
+                return;
+            }
+
+            const { available } = await ai.languageModel.capabilities();
+
+            if (available === "no") {
+                chatDiv.innerHTML = aiDisableHtmlText;
+                return;
+            }
+
+            const session = await ai.languageModel.create();
+
+            const conversationHistory = [];
+
+            function appendMessage(sender, message) {
+                const messageElement = document.createElement('div');
+                messageElement.innerHTML = `<strong>${sender}:</strong> ${message}`;
+                chatDiv.appendChild(messageElement);
+                chatDiv.scrollTop = chatDiv.scrollHeight;
+            }
+
+            sendButton.addEventListener('click', async () => {
+                const userMessage = messageInput.value.trim();
+                if (userMessage === '') return;
+
+                appendMessage('You', userMessage);
+                messageInput.value = '';
+
+                conversationHistory.push({ role: 'user', content: userMessage });
+
+                const prompt = conversationHistory.map(msg => `${msg.role === 'user' ? 'User' : 'AI'}: ${msg.content}`).join('\n') + '\nAI:';
+
+                const aiResponse = await session.prompt(prompt);
+
+                conversationHistory.push({ role: 'assistant', content: aiResponse });
+
+                appendMessage('AI', aiResponse);
+            });
+        })();
+    </script>
+</body>
+</html>
