@@ -42,6 +42,22 @@
                 chatDiv.scrollTop = chatDiv.scrollHeight;
             }
 
+            function showLoading() {
+                const loadingElement = document.createElement('div');
+                loadingElement.id = 'loading';
+                loadingElement.innerHTML = "<p>AI is thinking...</p>";
+                chatDiv.appendChild(loadingElement);
+                chatDiv.scrollTop = chatDiv.scrollHeight;
+            }
+
+            function hideLoading() {
+                const loadingElement = document.getElementById('loading');
+
+                if (loadingElement) {
+                    chatDiv.removeChild(loadingElement);
+                }
+            }
+
             sendButton.addEventListener('click', async () => {
                 const userMessage = messageInput.value.trim();
                 if (userMessage === '') return;
@@ -53,11 +69,18 @@
 
                 const prompt = conversationHistory.map(msg => `${msg.role === 'user' ? 'User' : 'AI'}: ${msg.content}`).join('\n') + '\nAI:';
 
-                const aiResponse = await session.prompt(prompt);
+                showLoading();
 
-                conversationHistory.push({ role: 'assistant', content: aiResponse });
-
-                appendMessage('AI', aiResponse);
+                try {
+                    const aiResponse = await session.prompt(prompt);
+                    conversationHistory.push({ role: 'assistant', content: aiResponse });
+                    appendMessage('AI', aiResponse);
+                } catch(error) {
+                    appendMessage('AI', "Error generating response.");
+                    console.error(error);
+                } finally {
+                    hideLoading();
+                }
             });
         })();
     </script>
